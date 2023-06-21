@@ -5,11 +5,13 @@
   "main": "index.js",
   "scripts": {
     "dev": "next dev",
-    "start": "node server.js"
+    "start-socket.io": "node socket.io-server.js",
+    "start-ws": "node plainws-server.js"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "socket.io": "^4.6.2"
+    "socket.io": "^4.6.2",
+    "ws": "^8.13.0"
   }
 }
