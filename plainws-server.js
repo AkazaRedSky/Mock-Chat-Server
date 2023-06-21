@@ -1,23 +1,53 @@
-const WebSocket = require('ws');
+const WebSocket = require("ws");
 
 // Create a WebSocket server
 const wss = new WebSocket.Server({ port: 8080 });
 
-// Event listener for WebSocket connections
-wss.on('connection', (ws) => {
-  // Event listener for receiving messages
-  ws.on('message', (message) => {
-    // Handle the received message
-    console.log('Received message:', message);
+// List the connected users
+const connectedUsers = new Set();
 
-    // Example: Echo the received message back to the client
-    ws.send(message);
+const broadcastMessage = (message) => {
+  wss.clients.forEach((client) => {
+    if (client.readyState === WebSocket.OPEN) {
+      client.send(JSON.stringify(message));
+    }
+  });
+};
+
+// Event listener for WebSocket connections
+wss.on("connection", (ws) => {
+  // Add user to the list of connected users
+  connectedUsers.set(ws, `User-${connectedUsers.size + 1}`);
+  
+
+  // Send a welcome message to the newly connected user
+  ws.send(JSON.stringify({ message: "Welcome to the WebSocket server" }));
+  // Broadcast the updated number of connected users
+  ws.on("message", (message) => {
+    // Handle received message from the user
+    console.log("Received message:", message);
+    broadcastMessage(`Number of connected users: ${connectedUsers.size}`);
+
+    // Check if the message is a JSON object
+    let parsedMessage;
+    try {
+      parsedMessage = JSON.parse(message);
+    } catch (error) {
+      console.log("Invalid message format:", error);
+      return;
+    }
+
+    // Broadcast the received message to all connected users
+    broadcastMessage(parsedMessage);
   });
 
-  // Event listener for WebSocket disconnections
-  ws.on('close', () => {
-    console.log('WebSocket connection closed');
+  ws.on("close", () => {
+    // Remove the user from the list of connected users
+    connectedUsers.delete(ws);
+
+    // Broadcast the updated number of connected users
+    broadcastMessage({ connectedUsers: connectedUsers.size });
   });
 });
 
-console.log('WebSocket server is running on port 8080');
+console.log("WebSocket server is running on port 8080");
